@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bangladesh Police - Tactical Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Base Setup */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+
+        body {
+            background-color: #020612;
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* --- PRELOADER --- */
+        #preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #01040d;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.8s cubic-bezier(0.77, 0, 0.175, 1), transform 0.8s ease;
+        }
+
+        .loader-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loader-hub {
+            position: relative;
+            width: 130px;
+            height: 130px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 28px;
+        }
+
+        .radar-outer {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 3px solid transparent;
+            border-top-color: #38b6ff;
+            border-bottom-color: #38b6ff;
+            border-radius: 50%;
+            animation: spinClockwise 1.4s cubic-bezier(0.42, 0, 0.58, 1) infinite;
+        }
+
+        .radar-inner {
+            position: absolute;
+            width: 80%;
+            height: 80%;
+            border: 2px solid transparent;
+            border-left-color: #ff003c;
+            border-right-color: #ff003c;
+            border-radius: 50%;
+            animation: spinCounterClockwise 1s linear infinite;
+        }
+
+        .laser-scanner {
+            position: absolute;
+            width: 110%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #38b6ff, #ffffff, #38b6ff, transparent);
+            box-shadow: 0 0 12px #38b6ff, 0 0 25px rgba(56, 182, 255, 0.8);
+            z-index: 3;
+            animation: scanLine 2s ease-in-out infinite;
+        }
+
+        .loader-shield {
+            font-size: 2.8rem;
+            color: #ffffff;
+            z-index: 2;
+            filter: drop-shadow(0 0 20px #38b6ff) drop-shadow(0 0 35px rgba(0, 102, 255, 0.6));
+            animation: shieldPulse 1.5s ease-in-out infinite alternate;
+        }
+
+        .loader-text-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .loader-text-branding {
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            color: #ffffff;
+            font-weight: 900;
+            text-align: center;
+            padding-left: 5px;
+            text-shadow: 0 0 15px rgba(56, 182, 255, 0.8);
+            animation: textTypingAppear 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        .loader-text-name {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 6px;
+            color: #38b6ff;
+            font-weight: 600;
+            text-align: center;
+            padding-left: 6px;
+            text-shadow: 0 0 10px rgba(56, 182, 255, 0.5);
+            opacity: 0;
+            animation: elegantFadeIn 1.5s ease-out 0.5s forwards;
+        }
+
+        .progress-bar-wrapper {
+            width: 180px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid rgba(56, 182, 255, 0.2);
+            box-shadow: 0 0 10px rgba(56, 182, 255, 0.1);
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #ff003c, #38b6ff);
+            box-shadow: 0 0 8px #38b6ff;
+            border-radius: 10px;
+            animation: fillProgress 2.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes spinClockwise { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes spinCounterClockwise { 0% { transform: rotate(360deg); } 100% { transform: rotate(0deg); } }
+        @keyframes scanLine { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+        @keyframes shieldPulse { 0% { transform: scale(0.95); filter: drop-shadow(0 0 15px #38b6ff); } 100% { transform: scale(1.05); filter: drop-shadow(0 0 30px #ff003c); } }
+        @keyframes textTypingAppear { 0% { width: 0; opacity: 0; filter: blur(5px); } 100% { width: 100%; opacity: 1; filter: blur(0); } }
+        @keyframes fillProgress { 0% { width: 0%; } 100% { width: 100%; } }
+        @keyframes elegantFadeIn { 0% { opacity: 0; transform: translateY(5px); } 100% { opacity: 1; transform: translateY(0); } }
+
+        .loaded-fade-out {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(1.05) translateY(-10px);
+        }
+
+        /* --- BACKGROUND --- */
+        .police-city-backdrop {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0;
+            background: url('https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?q=80&w=1920&auto=format&fit=crop') center center / cover no-repeat;
+            opacity: 0.25;
+            filter: contrast(135%) brightness(0.3) saturate(65%);
+            pointer-events: none;
+        }
+
+        .police-beacons-flare {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1;
+            background: 
+                radial-gradient(circle at 10% 30%, rgba(0, 102, 255, 0.35) 0%, transparent 50%),
+                radial-gradient(circle at 90% 20%, rgba(255, 0, 60, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 15% 80%, rgba(0, 140, 255, 0.25) 0%, transparent 45%),
+                radial-gradient(circle at 85% 80%, rgba(255, 0, 50, 0.3) 0%, transparent 45%);
+            pointer-events: none;
+            mix-blend-mode: screen;
+            animation: tacticalBeaconPulse 1.5s infinite alternate ease-in-out;
+        }
+
+        @keyframes tacticalBeaconPulse {
+            0% { opacity: 0.7; filter: brightness(0.9); }
+            100% { opacity: 1; filter: brightness(1.3); }
+        }
+
+        #cyberMeshCanvas {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .vignette-bottom-shading {
+            position: fixed;
+            bottom: 0; left: 0; width: 100%; height: 50vh;
+            background: linear-gradient(to top, #020612 15%, rgba(2, 6, 18, 0.92) 50%, transparent 100%);
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        /* --- UI CONTAINER WRAPPER --- */
+        .main-wrapper {
+            width: 100%;
+            max-width: 440px;
+            padding: 70px 24px 40px 24px;
+            text-align: center;
+            z-index: 10;
+            position: relative;
+            perspective: 1000px;
+        }
+
+        .header-brand-block {
+            margin-bottom: 45px;
+        }
+
+        .title-chrome {
+            font-size: 2.5rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-family: 'Impact', 'Arial Black', sans-serif;
+            background: linear-gradient(to bottom, #ffffff 0%, #e2e8f0 25%, #cbd5e1 42%, #334155 49%, #475569 53%, #94a3b8 60%, #f1f5f9 90%, #ffffff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            -webkit-text-stroke: 1px rgba(255, 255, 255, 0.8);
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 30px rgba(255, 255, 255, 0.4)) drop-shadow(0 0 8px rgba(56, 182, 255, 0.7));
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+
+        .rating-stars {
+            color: #ffffff;
+            font-size: 0.75rem;
+            letter-spacing: 8px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(255,255,255,0.9);
+        }
+
+        .motto-txt {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        /* --- PORTAL GLASS CARDS LAYOUT --- */
+        .glass-card {
+            background: rgba(5, 14, 35, 0.8);
+            border: 1px solid rgba(56, 182, 255, 0.25);
+            border-radius: 16px;
+            padding: 20px 20px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(56, 182, 255, 0.05);
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+
+        .glass-card:hover {
+            border-color: rgba(56, 182, 255, 0.8);
+            box-shadow: 0 0 35px rgba(0, 162, 255, 0.35), inset 0 0 15px rgba(56, 182, 255, 0.15);
+        }
+
+        .shield-icon-frame {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            border: 1px solid rgba(56, 182, 255, 0.45);
+            background: radial-gradient(circle, rgba(12, 40, 80, 0.7) 0%, rgba(2, 12, 30, 0.9) 100%);
+            box-shadow: 0 0 12px rgba(0, 162, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            color: #38b6ff;
+            margin-right: 15px;
+            flex-shrink: 0;
+            transition: transform 0.3s ease;
+        }
+
+        .glass-card:hover .shield-icon-frame {
+            transform: scale(1.08) rotate(-5deg);
+            color: #ffffff;
+            border-color: #38b6ff;
+            box-shadow: 0 0 15px #38b6ff;
+        }
+
+        .card-meta-desc h3 {
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: #ffffff;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .card-meta-desc p {
+            font-size: 0.82rem;
+            color: #94a3b8;
+            line-height: 1.4;
+            max-width: 210px;
+        }
+
+        .neon-bar-btn {
+            background: linear-gradient(90deg, rgba(12, 50, 107, 0.9) 0%, rgba(0, 78, 204, 1) 100%);
+            border: 1px solid #38b6ff;
+            color: #ffffff;
+            padding: 11px 16px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            text-decoration: none;
+            white-space: nowrap;
+            box-shadow: 0 0 12px rgba(0, 78, 204, 0.4);
+            display: inline-flex;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .neon-bar-btn:hover {
+            background: linear-gradient(90deg, #004ecc 0%, #0077ff 100%);
+            box-shadow: 0 0 22px rgba(56, 182, 255, 0.9);
+            transform: scale(1.02);
+        }
+
+        .neon-bar-btn i { margin-left: 8px; font-size: 0.7rem; transition: transform 0.2s ease; }
+        .neon-bar-btn:hover i { transform: translateX(3px); }
+
+        .grid-panel-container {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            padding: 24px 20px;
+        }
+
+        .grid-panel-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 24px;
+        }
+
+        .social-title-divider {
+            text-align: left;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #38b6ff;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .social-title-divider::after {
+            content: '';
+            flex-grow: 1;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(56, 182, 255, 0.5), transparent);
+        }
+
+        .social-box-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); 
+            gap: 12px;
+        }
+
+        .capsule-social-link {
+            background: rgba(3, 10, 26, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 14px 4px;
+            text-align: center;
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .capsule-social-link:hover {
+            border-color: #38b6ff;
+            background: rgba(0, 162, 255, 0.18);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.4);
+        }
+
+        .capsule-social-link i { font-size: 1.75rem; margin-bottom: 6px; display: block; transition: transform 0.3s ease; }
+        .capsule-social-link:hover i { transform: scale(1.12); }
+        .capsule-social-link.fb i { color: #1877F2; filter: drop-shadow(0 0 6px rgba(24,119,242,0.4)); }
+        .capsule-social-link.wa i { color: #25D366; filter: drop-shadow(0 0 6px rgba(37,211,102,0.4)); }
+        .capsule-social-link.tt i { color: #ffffff; filter: drop-shadow(0 0 6px rgba(254,44,85,0.6)); }
+        .capsule-social-link.tg i { color: #26A5E4; filter: drop-shadow(0 0 6px rgba(38,165,228,0.4)); }
+
+        .capsule-social-link span {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: #94a3b8;
+            display: block;
+            font-weight: 600;
+        }
+
+        /* --- ⚡ SAJIB BOX ⚡ --- */
+        .hype-card-container {
+            position: relative;
+            width: 100%;
+            height: 150px;
+            border-radius: 16px;
+            background: #03081a;
+            overflow: hidden;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform-style: preserve-3d;
+            transition: transform 0.1s ease, box-shadow 0.3s ease;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+        }
+
+        .hype-card-container::before {
+            content: '';
+            position: absolute;
+            width: 160%;
+            height: 160%;
+            background: conic-gradient(from 0deg, transparent 20%, #38b6ff, transparent 40%, transparent 70%, #ff003c, transparent 90%);
+            animation: rotateElectricBorder 2.5s linear infinite;
+            z-index: 1;
+        }
+
+        .hype-card-inner {
+            position: absolute;
+            top: 2px; left: 2px; right: 2px; bottom: 2px;
+            background: radial-gradient(circle at center, rgba(6, 15, 46, 0.95) 0%, rgba(2, 5, 20, 0.98) 100%);
+            border-radius: 14px;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .hype-card-inner::after {
+            content: '';
+            position: absolute;
+            width: 100%; height: 100%;
+            background-image: linear-gradient(rgba(56, 182, 255, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(56, 182, 255, 0.04) 1px, transparent 1px);
+            background-size: 12px 12px;
+            background-position: center;
+            z-index: 1;
+        }
+
+        .hype-center-icon {
+            font-size: 1.3rem;
+            color: #ff003c;
+            margin-bottom: 6px;
+            z-index: 3;
+            transform: translateZ(30px);
+            transition: all 0.3s ease;
+            filter: drop-shadow(0 0 5px #ff003c);
+        }
+
+        .hype-main-title {
+            font-size: 2.3rem;
+            font-weight: 900;
+            letter-spacing: 12px;
+            padding-left: 12px;
+            font-family: system-ui, -apple-system, sans-serif;
+            background: linear-gradient(180deg, #ffffff 30%, #64748b 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            z-index: 3;
+            transform: translateZ(50px);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .hype-subtitle {
+            font-size: 0.65rem;
+            letter-spacing: 4px;
+            color: #38b6ff;
+            font-weight: 800;
+            text-transform: uppercase;
+            z-index: 3;
+            transform: translateZ(25px);
+            margin-top: 5px;
+        }
+
+        .hype-card-container:hover {
+            box-shadow: 0 0 35px rgba(56, 182, 255, 0.4), 0 0 60px rgba(255, 0, 60, 0.2);
+        }
+        .hype-card-container:hover .hype-main-title {
+            letter-spacing: 16px;
+            padding-left: 16px;
+            background: linear-gradient(180deg, #ffffff 0%, #38b6ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 15px rgba(56, 182, 255, 0.5));
+        }
+        .hype-card-container:hover .hype-center-icon {
+            color: #38b6ff;
+            filter: drop-shadow(0 0 10px #38b6ff);
+            transform: translateZ(40px) scale(1.1);
+        }
+
+        @keyframes rotateElectricBorder {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        footer {
+            margin-top: auto;
+            width: 100%;
+            padding: 24px;
+            background: rgba(2, 6, 18, 0.98);
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 0.75rem;
+            color: #64748b;
+            text-align: center;
+            z-index: 10;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PRELOADER -->
+    <div id="preloader">
+        <div class="loader-container">
+            <div class="loader-hub">
+                <div class="radar-outer"></div>
+                <div class="radar-inner"></div>
+                <div class="laser-scanner"></div>
+                <i class="fa-solid fa-shield-halved loader-shield"></i>
+            </div>
+            <div class="loader-text-wrapper">
+                <div class="loader-text-branding">Bangladesh Police</div>
+                <div class="loader-text-name">SAJIB</div>
+            </div>
+            <div class="progress-bar-wrapper">
+                <div class="progress-bar-fill"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Background Elements -->
+    <div class="police-city-backdrop"></div>
+    <div class="police-beacons-flare"></div>
+    <canvas id="cyberMeshCanvas"></canvas>
+    <div class="vignette-bottom-shading"></div>
+
+    <div class="main-wrapper">
+        
+        <div class="header-brand-block">
+            <h1 class="title-chrome">Bangladesh Police</h1>
+            <div class="rating-stars">★ ★ ★ ★ ★</div>
+            <p class="motto-txt">Service • Security • Peace</p>
+        </div>
+
+        <!-- CONTACT CARD -->
+        <div class="glass-card grid-panel-container">
+            <div class="grid-panel-top">
+                <div style="display: flex; align-items: center;">
+                    <div class="shield-icon-frame"><i class="fa-solid fa-id-card"></i></div>
+                    <div class="card-meta-desc" style="text-align: left;">
+                        <h3>Contact Me</h3>
+                        <p>Welcome to my professional profile dashboard.</p>
+                    </div>
+                </div>
+                <!-- Top Message button also linked to Telegram profile -->
+                <a href="https://t.me/its_sajib_1" target="_blank" class="neon-bar-btn">Message <i class="fa-solid fa-chevron-right"></i></a>
+            </div>
+            
+            <div class="social-title-divider">
+                <i class="fa-solid fa-users-rectangle"></i> Social Networks
+            </div>
+
+            <div class="social-box-row">
+                <!-- Updated Facebook Link -->
+                <a href="https://www.facebook.com/share/1Byw4Kn2t8/?mibextid=wwXIfr" target="_blank" class="capsule-social-link fb">
+                    <i class="fa-brands fa-facebook"></i>
+                    <span>Facebook</span>
+                </a>
+                
+                <a href="https://chat.whatsapp.com/IcQWOOoQULT0E0WjJN9lsK?mode=gi_t" target="_blank" class="capsule-social-link wa">
+                    <i class="fa-brands fa-whatsapp"></i>
+                    <span>Whatsapp</span>
+                </a>
+
+                <!-- Updated TikTok Link -->
+                <a href="https://www.tiktok.com/@sajib_33?_r=1&_t=ZS-97HhBO1LxAL" target="_blank" class="capsule-social-link tt">
+                    <i class="fa-brands fa-tiktok"></i>
+                    <span>TikTok</span>
+                </a>
+                
+                <!-- Updated Telegram Link -->
+                <a href="https://t.me/its_sajib_1" target="_blank" class="capsule-social-link tg">
+                    <i class="fa-brands fa-telegram"></i>
+                    <span>Telegram</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- ⚡ SAJIB BOX ⚡ -->
+        <div class="hype-card-container" id="tiltCard">
+            <div class="hype-card-inner">
+                <div class="hype-center-icon"><i class="fa-solid fa-star"></i></div>
+                <div class="hype-main-title">SAJIB</div>
+                <div class="hype-subtitle">OPERATIONAL COMMAND</div>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        <p>&copy; 2026 Bangladesh Police | All Rights Reserved</p>
+    </footer>
+
+    <script>
+        // --- Preloader Engine ---
+        window.addEventListener('load', () => {
+            const preloader = document.getElementById('preloader');
+            setTimeout(() => {
+                preloader.classList.add('loaded-fade-out');
+                setTimeout(() => {
+                    preloader.style.display = 'none';
+                }, 800);
+            }, 2600); 
+        });
+
+        // --- Interactive Node Mesh Canvas ---
+        const canvas = document.getElementById('cyberMeshCanvas');
+        const ctx = canvas.getContext('2d');
+        let points = [];
+        const maxPoints = 45; 
+        const connectionDistance = 120;
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class CyberNode {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.vx = (Math.random() - 0.5) * 0.25;
+                this.vy = (Math.random() - 0.5) * 0.25;
+                this.radius = Math.random() * 1.5 + 1;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(56, 182, 255, 0.3)';
+                ctx.fill();
+            }
+        }
+
+        function setup() {
+            points = [];
+            for(let i=0; i<maxPoints; i++) { points.push(new CyberNode()); }
+        }
+
+        function loop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for(let i=0; i<points.length; i++) {
+                points[i].update();
+                points[i].draw();
+                for(let j=i+1; j<points.length; j++) {
+                    const dx = points[i].x - points[j].x;
+                    const dy = points[i].y - points[j].y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if(dist < connectionDistance) {
+                        ctx.beginPath();
+                        ctx.moveTo(points[i].x, points[i].y);
+                        ctx.lineTo(points[j].x, points[j].y);
+                        ctx.strokeStyle = `rgba(0, 162, 255, ${(1 - dist/connectionDistance) * 0.08})`;
+                        ctx.lineWidth = 0.7;
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(loop);
+        }
+        setup();
+        loop();
+
+        // --- Advanced 3D Tilt Engine For SAJIB Box ---
+        const card = document.getElementById('tiltCard');
+        
+        card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left; 
+            const y = e.clientY - rect.top;  
+            
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            
+            const rotateX = ((centerY - y) / centerY) * 22; 
+            const rotateY = ((x - centerX) / centerX) * 22;
+            
+            card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.03)`;
+        });
+        
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = 'rotateX(0deg) rotateY(0deg) scale(1)';
+        });
+
+        card.addEventListener('touchmove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.touches[0].clientX - rect.left;
+            const y = e.touches[0].clientY - rect.top;
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            const rotateX = ((centerY - y) / centerY) * 15;
+            const rotateY = ((x - centerX) / centerX) * 15;
+            card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        });
+
+        card.addEventListener('touchend', () => {
+            card.style.transform = 'rotateX(0deg) rotateY(0deg) scale(1)';
+        });
+    </script>
+</body>
+</html>
